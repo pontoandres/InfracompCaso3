@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyPair;
@@ -17,19 +18,41 @@ public class Servidor {
             PrivateKey llavePrivada = parDeLlaves.getPrivate();
             PublicKey llavePublica = parDeLlaves.getPublic();
 
-            // Guardar la llave privada en un archivo
-            try (FileOutputStream fos = new FileOutputStream("llavePrivada.key")) {
+            // Crear un directorio para la llave privada si no existe
+            File privateDir = new File("privado");
+            if (!privateDir.exists()) {
+                if (privateDir.mkdir()) {
+                    System.out.println("Directorio 'privado' creado exitosamente.");
+                } else {
+                    System.err.println("No se pudo crear el directorio 'privado'.");
+                    return; // Detener si no se puede crear el directorio
+                }
+            }
+
+            // Guardar la llave privada en el directorio 'privado'
+            try (FileOutputStream fos = new FileOutputStream("privado/llavePrivada.key")) {
                 fos.write(llavePrivada.getEncoded());
             }
 
-            // Guardar la llave pública en un archivo
-            try (FileOutputStream fos = new FileOutputStream("llavePublica.key")) {
+            // Crear un directorio para la llave pública si no existe
+            File publicDir = new File("publico");
+            if (!publicDir.exists()) {
+                if (publicDir.mkdir()) {
+                    System.out.println("Directorio 'publico' creado exitosamente.");
+                } else {
+                    System.err.println("No se pudo crear el directorio 'publico'.");
+                    return; // Detener si no se puede crear el directorio
+                }
+            }
+
+            // Guardar la llave pública en el directorio 'publico'
+            try (FileOutputStream fos = new FileOutputStream("publico/llavePublica.key")) {
                 fos.write(llavePublica.getEncoded());
             }
 
             System.out.println("Las llaves asimétricas se generaron y guardaron exitosamente.");
-            System.out.println("La llave privada se guardó en 'llavePrivada.key'.");
-            System.out.println("La llave pública se guardó en 'llavePublica.key' y puede ser accedida por los clientes.");
+            System.out.println("La llave privada se guardó en 'privado/llavePrivada.key'.");
+            System.out.println("La llave pública se guardó en 'publico/llavePublica.key' y puede ser accedida por los clientes.");
         } catch (NoSuchAlgorithmException | IOException e) {
             System.err.println("Error al generar las llaves: " + e.getMessage());
         }
@@ -40,7 +63,7 @@ public class Servidor {
         System.out.println("Selecciona una opción:");
         System.out.println("1: Generar la pareja de llaves asimétricas");
 
-        // Para simplificar, asumimos que la opción 1 fue seleccionada
+        // TODO: Implementar la opción 1 EN CONSOLA
         generarLlavesRSA();
     }
 }
