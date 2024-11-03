@@ -2,6 +2,7 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import java.security.SecureRandom;
+import javax.crypto.KeyGenerator;
 
 public class Simetrico {
 
@@ -60,5 +61,29 @@ public class Simetrico {
             return null;
         }
         return textoClaro;
+    }
+
+    public void test() throws Exception {
+        // Generar una llave simétrica AES de 256 bits
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(256);
+        SecretKey llaveSimetrica = keyGen.generateKey();
+
+
+        // Mensaje a cifrar
+        String mensaje = "Hola, mundo!";
+        
+        // Cifrar el mensaje
+        byte[] mensajeCifrado = cifrar(llaveSimetrica, mensaje);
+        System.out.println("Mensaje cifrado: " + new String(mensajeCifrado));
+        
+        // Descifrar el mensaje
+        byte[] mensajeDescifrado = descifrar(llaveSimetrica, mensajeCifrado);
+        System.out.println("Mensaje descifrado: " + new String(mensajeDescifrado));
+    }
+
+    public static void main(String[] args) throws Exception {
+        Simetrico simetrico = new Simetrico();
+        simetrico.test();
     }
 }

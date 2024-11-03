@@ -1,5 +1,10 @@
 import javax.crypto.Cipher;
 import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 public class Asimetrico {
 
@@ -33,5 +38,30 @@ public class Asimetrico {
             return null;
         }
         return textoClaro;
+    }
+
+    public void test() throws NoSuchAlgorithmException {
+        // Crear un par de llaves RSA
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(1024);
+            KeyPair parDeLlaves = keyGen.generateKeyPair();
+            PrivateKey llavePrivada = parDeLlaves.getPrivate();
+            PublicKey llavePublica = parDeLlaves.getPublic();
+
+
+        // Cifrar un mensaje con la llave pública
+        String mensaje = "Hola, mundo!";
+        byte[] mensajeCifrado = Asimetrico.cifrar(llavePublica, "RSA", mensaje);
+        System.out.println("Mensaje cifrado: " + new String(mensajeCifrado));
+        // Descifrar el mensaje con la llave privada
+        byte[] mensajeDescifrado = Asimetrico.descifrar(llavePrivada, "RSA", mensajeCifrado);
+
+        // Imprimir el mensaje descifrado
+        System.out.println(new String(mensajeDescifrado));
+    }
+
+    public static void main(String[] args) throws NoSuchAlgorithmException {
+        Asimetrico asimetrico = new Asimetrico();
+        asimetrico.test();
     }
 }
