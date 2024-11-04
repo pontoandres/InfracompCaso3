@@ -1,14 +1,27 @@
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 
-public class Servidor {
+public class Servidor extends Thread{
+
+    PrivateKey llavePrivada = null;
+    PublicKey llavePublica = null;
+
+    public Servidor() {
+        leerLlavesRSA();
+    }
+
 
     public static void generarLlavesRSA() {
         try {
@@ -19,6 +32,8 @@ public class Servidor {
             PrivateKey llavePrivada = parDeLlaves.getPrivate();
             PublicKey llavePublica = parDeLlaves.getPublic();
 
+            // System.out.println("Llave privada: " + llavePrivada);
+            // System.out.println("Llave pública: " + llavePublica);
             // Crear un directorio para la llave privada si no existe
             File privateDir = new File("privado");
             if (!privateDir.exists()) {
@@ -59,12 +74,72 @@ public class Servidor {
         }
     }
 
+    public void leerLlavesRSA() {
+    
+    try {
+        // Leer la llave privada desde el archivo
+        File privateKeyFile = new File("privado/llavePrivada.key");
+        byte[] privateKeyBytes = new byte[(int) privateKeyFile.length()];
+        try (FileInputStream fis = new FileInputStream(privateKeyFile)) {
+        fis.read(privateKeyBytes);
+        }
+
+        // Convertir los bytes leídos a una llave privada
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+        llavePrivada = keyFactory.generatePrivate(privateKeySpec);
+        // System.out.println("La llave privada es: " + llavePrivada);
+
+
+        // System.out.println("La llave privada se leyó exitosamente desde 'privado/llavePrivada.key'.");
+    } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+        System.err.println("Error al leer la llave privada: " + e.getMessage());
+    }
+
+    
+    try {
+        // Leer la llave pública desde el archivo
+        File publicKeyFile = new File("publico/llavePublica.key");
+        byte[] publicKeyBytes = new byte[(int) publicKeyFile.length()];
+        try (FileInputStream fis = new FileInputStream(publicKeyFile)) {
+            fis.read(publicKeyBytes);
+        }
+
+        // Convertir los bytes leídos a una llave pública
+        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
+        llavePublica = keyFactory.generatePublic(publicKeySpec);
+
+        // System.out.println("La llave pública se leyó exitosamente desde 'publico/llavePublica.key'.");
+        // System.out.println("La llave pública es: " + llavePublica);
+    } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+        System.err.println("Error al leer la llave pública: " + e.getMessage());
+    }
+    }
+
+
+    // Parte 1: Lectura reto
+
+    public synchronized byte[] descifrarReto(byte[] retoCifrado) {
+        byte[] retoDescifrado = Asimetrico.descifrar(llavePrivada, "RSA", retoCifrado);
+        return retoDescifrado;
+    }
+
+    // fin parte 1
+
+
+
     public static void main(String[] args) {
+        Servidor servidor = new Servidor();
+
         // Menú simple para seleccionar la opción 1
         System.out.println("Selecciona una opción:");
         System.out.println("1: Generar la pareja de llaves asimétricas");
 
         // TODO: Implementar la opción 1 EN CONSOLA
         generarLlavesRSA();
+
+        servidor.leerLlavesRSA();
+
     }
 }
