@@ -28,28 +28,25 @@ public class DiffieHellman {
         parser(output);
     }
 
-    public void iniciarProceso() throws IOException, InterruptedException {
-        semaphore.acquire(); // Adquirir un permiso del semáforo
+    public synchronized void iniciarProceso() throws IOException, InterruptedException {
 
-        try {
-            String executablePath = "OpenSSL-1.1.1h_win32\\openssl.exe";
-            String[] command = { executablePath, "dhparam", "-text", "1024" };
+        String executablePath = "OpenSSL-1.1.1h_win32\\openssl.exe";
+        String[] command = { executablePath, "dhparam", "-text", "1024" };
+        
+        // Process process = Runtime.getRuntime().exec(command);
+        Process process = new ProcessBuilder().command(command).redirectErrorStream(true).start();
 
-            Process process = Runtime.getRuntime().exec(command);
-            
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            StringBuilder output = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-            reader.close();
-
-            process.waitFor();
-            this.output = output.toString();
-        } finally {
-            semaphore.release(); // Liberar el permiso del semáforo
+        
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder output = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line).append("\n");
         }
+        reader.close();
+        
+        process.waitFor();
+        this.output = output.toString();
     }
     
     public void parser(String input) {
@@ -68,6 +65,7 @@ public class DiffieHellman {
         if (generatorMatcher.find()) {
             this.generator = Integer.parseInt(generatorMatcher.group(1));
         }
+        System.out.println("Primo: " + this.prime + "\nGenerador: " + this.generator);
     }
 
     public BigInteger llaveAComunicar(int generator, BigInteger prime, BigInteger llavePrivada) {
