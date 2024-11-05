@@ -2,6 +2,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -11,15 +12,21 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 
 public class Servidor extends Thread{
 
     PrivateKey llavePrivada = null;
     PublicKey llavePublica = null;
+    int cantidadDelegados;
+    int delegadosOcupados = 0;
 
-    public Servidor() {
+    public Servidor(int cantidadDelegados) {
         leerLlavesRSA();
+        this.cantidadDelegados = cantidadDelegados;
     }
 
 
@@ -121,16 +128,30 @@ public class Servidor extends Thread{
     // Parte 1: Lectura reto
 
     public synchronized byte[] descifrarReto(byte[] retoCifrado) {
+        while (delegadosOcupados == cantidadDelegados) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.err.println("Error al esperar: " + e.getMessage());
+            }
+        }
+        delegadosOcupados++;
         byte[] retoDescifrado = Asimetrico.descifrar(llavePrivada, "RSA", retoCifrado);
+        delegadosOcupados--;
+        notifyAll();
         return retoDescifrado;
     }
 
     // fin parte 1
 
+    // Inicio parte 2 - Diffie Hellman
+
+
+    // fin parte 2
 
 
     public static void main(String[] args) {
-        Servidor servidor = new Servidor();
+        Servidor servidor = new Servidor(1);
 
         // Menú simple para seleccionar la opción 1
         System.out.println("Selecciona una opción:");

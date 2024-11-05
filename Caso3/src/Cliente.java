@@ -17,6 +17,7 @@ public class Cliente extends Thread{
     private Servidor servidor;
     private int ClienteID;
     private String textoBase;
+    private DiffieHellman dh;
 
     public Cliente(Servidor servidor, int clienteID) { 
         reto = new BigInteger(130, new java.security.SecureRandom());
@@ -26,6 +27,7 @@ public class Cliente extends Thread{
         this.servidor = servidor;
         this.ClienteID = clienteID;
         this.textoBase = "Cliente " + ClienteID + " - ";
+        
 
     }   
 
@@ -69,23 +71,34 @@ public class Cliente extends Thread{
         
         if(descifrarReto(cifrarReto()).equals(retoString)){
             System.out.println(textoBase+"conexión reto: OK");
+            pedirLlavesPublicas();
         } else {
-            System.out.println("conexión reto: Error");
+            System.out.println(textoBase+"conexión reto: ERROR");
         }
     }
 
     // fin parte 1
 
+    // Parte 2: Diffie Hellman
+
+    private void pedirLlavesPublicas(){
+        System.out.println(textoBase+"Iniciando DiffieHellman...");
+        this.dh = new DiffieHellman();
+        System.out.println(textoBase+"Creado DiffieHellman...");
+    }
+
+    // fin parte 2
 
     
     
     public static void main(String[] args) {
         System.out.println("Cliente");
-        Servidor servidor = new Servidor();
+        Servidor servidor = new Servidor(32);
         Cliente cliente = new Cliente(servidor, 1);
         cliente.conexionServidor();
 
-        for (int i = 0; i < 10; i++) {
+        // descomentar para probar con 32 clientes concurrentes 
+        for (int i = 0; i < 32; i++) {
             final int clientId = i + 1;
             new Thread(() -> {
             Cliente clienteConcurrente = new Cliente(servidor, clientId);

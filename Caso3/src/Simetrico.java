@@ -1,7 +1,14 @@
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+
 import javax.crypto.KeyGenerator;
 
 public class Simetrico {
@@ -61,6 +68,29 @@ public class Simetrico {
             return null;
         }
         return textoClaro;
+    }
+
+    // llave compartida es (G^y mod p)
+    public static ArrayList<SecretKey> generadorLlavesSimetricas(BigInteger secretoCompartido) throws NoSuchAlgorithmException{
+        
+        MessageDigest sha512;
+        sha512 = MessageDigest.getInstance("SHA-512");
+        byte[] digest = sha512.digest(secretoCompartido.toByteArray());
+        
+        byte[] keyAB1Bytes = new byte[32]; 
+        byte[] keyAB2Bytes = new byte[32];
+
+        System.arraycopy(digest, 0, keyAB1Bytes, 0, 32); 
+        System.arraycopy(digest, 32, keyAB2Bytes, 0, 32); 
+
+        SecretKey keyAB1 = new SecretKeySpec(keyAB1Bytes, "AES");
+        SecretKey keyAB2 = new SecretKeySpec(keyAB2Bytes, "AES");
+
+        ArrayList<SecretKey> llaves = new ArrayList<SecretKey>();
+        llaves.add(keyAB1);
+        llaves.add(keyAB2);
+
+        return llaves;
     }
 
     public void test() throws Exception {

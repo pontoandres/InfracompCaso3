@@ -3,7 +3,7 @@ import java.util.Scanner;
 public class App {
     // Juan pasó por aquí
 
-    Servidor servidor = new Servidor();
+    Servidor servidor = new Servidor(4);
 
     private void opcion1() {
         Servidor.generarLlavesRSA();
