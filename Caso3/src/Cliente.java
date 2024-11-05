@@ -9,6 +9,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 import java.math.BigInteger;
 
@@ -110,6 +111,10 @@ public class Cliente extends Thread{
         if (firma.equals(firmaEsperada)){
             System.out.println(textoBase+"Firma con DiffieHellman: OK");
             
+            // recibir y usar el IV del servidor
+            byte[] iv = (byte[]) listaDiffie.get(2);
+            IvParameterSpec ivSpec = new IvParameterSpec(iv);   
+
             // crear llaves simetricas
             this.dh.setLlavesSimetricas();
             System.out.println(textoBase+"Llave simétrica creada: ");
