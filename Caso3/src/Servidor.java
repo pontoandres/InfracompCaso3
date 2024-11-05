@@ -9,6 +9,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -23,6 +24,8 @@ public class Servidor extends Thread{
     PublicKey llavePublica = null;
     int cantidadDelegados;
     int delegadosOcupados = 0;
+    BigInteger llavePrivadaDiffie = new BigInteger(1024, new SecureRandom());
+
 
     public Servidor(int cantidadDelegados) {
         leerLlavesRSA();
@@ -145,6 +148,26 @@ public class Servidor extends Thread{
     // fin parte 1
 
     // Inicio parte 2 - Diffie Hellman
+
+    public ArrayList<Object> iniciarDiffieHellman() {
+        DiffieHellman diffieHellman = new DiffieHellman();
+        ArrayList<Object> diffieHellmanList = new ArrayList<Object>();
+
+        diffieHellmanList.add(diffieHellman); // Agregar el objeto DiffieHellman a la lista
+
+        int generador = diffieHellman.generator;
+        BigInteger primo = diffieHellman.prime;
+        BigInteger llaveComunicada = diffieHellman.llaveAComunicar(diffieHellman.generator, diffieHellman.prime, llavePrivadaDiffie);
+        
+        String textoDiffie = ""+primo.byteValue();
+        System.out.println("Texto Diffie: " + textoDiffie);
+        byte[] textoCifrado = Asimetrico.cifrar(llavePrivada, "RSA", textoDiffie);
+
+        diffieHellmanList.add(textoCifrado); // Agregar el texto cifrado a la lista
+
+        return diffieHellmanList;
+    }
+    
 
 
     // fin parte 2

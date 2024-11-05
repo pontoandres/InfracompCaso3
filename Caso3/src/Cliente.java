@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.math.BigInteger;
 
 public class Cliente extends Thread{
@@ -83,7 +84,8 @@ public class Cliente extends Thread{
 
     private void pedirLlavesPublicas(){
         System.out.println(textoBase+"Iniciando DiffieHellman...");
-        this.dh = new DiffieHellman();
+        // this.dh = new DiffieHellman();
+        ArrayList<Object> listaDiffie = this.servidor.iniciarDiffieHellman();
         System.out.println(textoBase+"Creado DiffieHellman...");
     }
 
@@ -94,11 +96,11 @@ public class Cliente extends Thread{
     public static void main(String[] args) {
         System.out.println("Cliente");
         Servidor servidor = new Servidor(32);
-        Cliente cliente = new Cliente(servidor, 1);
-        cliente.conexionServidor();
+        // Cliente cliente = new Cliente(servidor, 1);
+        // cliente.conexionServidor();
 
         // descomentar para probar con 32 clientes concurrentes 
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < 5; i++) {
             final int clientId = i + 1;
             new Thread(() -> {
             Cliente clienteConcurrente = new Cliente(servidor, clientId);
