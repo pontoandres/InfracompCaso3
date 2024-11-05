@@ -10,12 +10,15 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.KeyStore.SecretKeyEntry;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import javax.crypto.SecretKey;
 
 
 public class Servidor extends Thread{
@@ -25,12 +28,14 @@ public class Servidor extends Thread{
     int cantidadDelegados;
     int delegadosOcupados = 0;
     BigInteger llavePrivadaDiffie = new BigInteger(1024, new SecureRandom());
+    
 
 
     public Servidor(int cantidadDelegados) {
         leerLlavesRSA();
         this.cantidadDelegados = cantidadDelegados;
     }
+
 
 
     public static void generarLlavesRSA() {
@@ -153,21 +158,30 @@ public class Servidor extends Thread{
         DiffieHellman diffieHellman = new DiffieHellman();
         ArrayList<Object> diffieHellmanList = new ArrayList<Object>();
 
-        diffieHellmanList.add(diffieHellman); // Agregar el objeto DiffieHellman a la lista
+        
 
         int generador = diffieHellman.generator;
         BigInteger primo = diffieHellman.prime;
         BigInteger llaveComunicada = diffieHellman.llaveAComunicar(diffieHellman.generator, diffieHellman.prime, llavePrivadaDiffie);
         
-        String textoDiffie = ""+primo.byteValue();
-        System.out.println("Texto Diffie: " + textoDiffie);
+        diffieHellman.setLlaveCompartidaServidor(llaveComunicada);
+
+        String textoDiffie = ""+primo.intValue()+":"+generador+":"+llaveComunicada.intValue();
+        // System.out.println("Texto Diffie: " + textoDiffie);
         byte[] textoCifrado = Asimetrico.cifrar(llavePrivada, "RSA", textoDiffie);
 
+        diffieHellmanList.add(diffieHellman); // Agregar el objeto DiffieHellman a la lista
         diffieHellmanList.add(textoCifrado); // Agregar el texto cifrado a la lista
 
         return diffieHellmanList;
     }
     
+    public synchronized boolean checkLlaveCompartida(DiffieHellman dh){
+
+        BigInteger llaveCompartidaOriginal = dh.llaveCompartida;
+        BigInteger llaveCompartida = dh.llaveCompartida(dh.llaveCompartidaCliente, llavePrivadaDiffie, dh.prime);
+        return llaveCompartida.equals(llaveCompartidaOriginal);
+    }
 
 
     // fin parte 2

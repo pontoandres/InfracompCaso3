@@ -7,6 +7,9 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+
+import javax.crypto.SecretKey;
+
 import java.math.BigInteger;
 
 public class Cliente extends Thread{
@@ -19,6 +22,7 @@ public class Cliente extends Thread{
     private int ClienteID;
     private String textoBase;
     private DiffieHellman dh;
+    private BigInteger llavePrivada;
 
     public Cliente(Servidor servidor, int clienteID) { 
         reto = new BigInteger(130, new java.security.SecureRandom());
@@ -28,8 +32,8 @@ public class Cliente extends Thread{
         this.servidor = servidor;
         this.ClienteID = clienteID;
         this.textoBase = "Cliente " + ClienteID + " - ";
+        this.llavePrivada = new BigInteger(1024, new java.security.SecureRandom());
         
-
     }   
 
     private void leerLlavePublicaRSA(){
@@ -86,7 +90,42 @@ public class Cliente extends Thread{
         System.out.println(textoBase+"Iniciando DiffieHellman...");
         // this.dh = new DiffieHellman();
         ArrayList<Object> listaDiffie = this.servidor.iniciarDiffieHellman();
+        this.dh = (DiffieHellman) listaDiffie.get(0);
         System.out.println(textoBase+"Creado DiffieHellman...");
+
+        // establecer llave compartida cliente
+        BigInteger llaveComunicado = dh.llaveAComunicar(dh.generator, dh.prime, llavePrivada);
+        dh.setLlaveCompartidaCliente(llaveComunicado);
+
+        // establecer llave compartida general
+
+        dh.llaveCompartida(dh.llaveCompartidaServidor, llavePrivada, dh.prime);
+
+
+
+        // verificar firma
+        byte[] firmaServidor = (byte[]) listaDiffie.get(1);
+        String firma = new String(Asimetrico.descifrar(llavePublica, "RSA", firmaServidor));
+        String firmaEsperada = ""+dh.prime.intValue()+":"+dh.generator+":"+dh.llaveCompartidaServidor.intValue();
+        if (firma.equals(firmaEsperada)){
+            System.out.println(textoBase+"Firma con DiffieHellman: OK");
+            
+            // crear llaves simetricas
+            this.dh.setLlavesSimetricas();
+            System.out.println(textoBase+"Llave simétrica creada: ");
+
+            // verificar llaves compartidas
+            if (this.servidor.checkLlaveCompartida(dh)){
+                System.out.println(textoBase+"Llave compartidas simetricas: OK");
+            } else {
+                System.out.println(textoBase+"Llave compartida: ERROR");
+            }
+            
+
+        } else {
+            System.out.println(textoBase+" Firma con DiffieHellman: ERROR");
+        }
+
     }
 
     // fin parte 2
@@ -100,7 +139,7 @@ public class Cliente extends Thread{
         // cliente.conexionServidor();
 
         // descomentar para probar con 32 clientes concurrentes 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 32; i++) {
             final int clientId = i + 1;
             new Thread(() -> {
             Cliente clienteConcurrente = new Cliente(servidor, clientId);

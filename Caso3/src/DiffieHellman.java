@@ -10,11 +10,18 @@ import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.crypto.SecretKey;
+
 public class DiffieHellman {
     private static final Semaphore semaphore = new Semaphore(10);
     public BigInteger prime;
     public int generator;
     public BigInteger llaveCompartida;
+    public BigInteger llaveCompartidaServidor;
+    public BigInteger llaveCompartidaCliente;
+    SecretKey llaveSimetricaAB1 = null;
+    SecretKey llaveSimetricaAB2 = null;
+
 
     String output = "";
 
@@ -30,7 +37,9 @@ public class DiffieHellman {
 
     public synchronized void iniciarProceso() throws IOException, InterruptedException {
 
-        String executablePath = "./lib/OpenSSL-1.1.1h_win32/openssl.exe";
+        String executablePath = "Caso3/lib/OpenSSL-1.1.1h_win32/openssl.exe"; // para Ponto
+        //String executablePath = "Caso3\\lib\\OpenSSL-1.1.1h_win32\\openssl.exe"; // para Juan
+
         String[] command = { executablePath, "dhparam", "-text", "1024" };
         
         // Process process = Runtime.getRuntime().exec(command);
@@ -65,18 +74,44 @@ public class DiffieHellman {
         if (generatorMatcher.find()) {
             this.generator = Integer.parseInt(generatorMatcher.group(1));
         }
-        System.out.println("Primo: " + this.prime + "\nGenerador: " + this.generator);
+        // System.out.println("Primo: " + this.prime + "\nGenerador: " + this.generator);
     }
 
     public BigInteger llaveAComunicar(int generator, BigInteger prime, BigInteger llavePrivada) {
         return BigInteger.valueOf(generator).modPow(llavePrivada, prime);
     }
 
-    public BigInteger llaveCompartida(BigInteger llaveComunicada, BigInteger llavePrivada, BigInteger prime) {
-        this.llaveCompartida = llaveComunicada.modPow(llavePrivada, prime);
-        return llaveComunicada.modPow(llavePrivada, prime);
+    public void setLlaveCompartidaServidor(BigInteger llaveCompartidaServidor) {
+        this.llaveCompartidaServidor = llaveCompartidaServidor;
     }
 
+    public void setLlaveCompartidaCliente(BigInteger llaveCompartidaCliente) {
+        this.llaveCompartidaCliente = llaveCompartidaCliente;
+    }
+
+    public BigInteger llaveCompartida(BigInteger llaveComunicada, BigInteger llavePrivada, BigInteger prime) {
+        this.llaveCompartida = llaveComunicada.modPow(llavePrivada, prime);
+        return this.llaveCompartida;
+    }
+
+
+    public void setLlavesSimetricas(){
+        try {
+            List<SecretKey> llaves = Simetrico.generadorLlavesSimetricas(this.llaveCompartida);
+            this.llaveSimetricaAB1 = llaves.get(0);
+            this.llaveSimetricaAB2 = llaves.get(1);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean checkEqualLlavesCompartidas(BigInteger llavePrivadaServidor){
+
+        BigInteger llaveCompartidaB = llaveCompartida(llaveCompartidaCliente, llavePrivadaServidor, prime);
+
+        return this.llaveCompartida.equals(llaveCompartidaB);
+    }
+    
     public static void main(String[] args) {
         DiffieHellman diffieHellman = new DiffieHellman();
         try {

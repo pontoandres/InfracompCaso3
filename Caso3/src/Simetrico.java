@@ -99,7 +99,6 @@ public class Simetrico {
         keyGen.init(256);
         SecretKey llaveSimetrica = keyGen.generateKey();
 
-
         // Mensaje a cifrar
         String mensaje = "Hola, mundo!";
         
