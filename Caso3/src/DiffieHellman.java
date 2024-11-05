@@ -30,7 +30,7 @@ public class DiffieHellman {
 
     public synchronized void iniciarProceso() throws IOException, InterruptedException {
 
-        String executablePath = "OpenSSL-1.1.1h_win32\\openssl.exe";
+        String executablePath = "./lib/OpenSSL-1.1.1h_win32/openssl.exe";
         String[] command = { executablePath, "dhparam", "-text", "1024" };
         
         // Process process = Runtime.getRuntime().exec(command);
