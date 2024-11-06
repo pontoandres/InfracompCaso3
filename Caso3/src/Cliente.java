@@ -29,6 +29,8 @@ public class Cliente extends Thread{
     private String tiempoGenerarGP = "";
     private String tiempoVerificarFirma = "";
     private static int totClientes ;
+    private IvParameterSpec iv; // almacenar el IV recibido
+
     
 
     public Cliente(Servidor servidor, int clienteID) { 
@@ -97,7 +99,7 @@ public class Cliente extends Thread{
             pedirLlavesPublicas();
             
             // AGREGAR AQUÍ DEMÁS KONEKSIONES @Ponto
-
+            enviarUidYHMAC();
 
 
 
@@ -151,8 +153,8 @@ public class Cliente extends Thread{
             System.out.println(textoBase+"Firma con DiffieHellman: OK");
             
             // recibir y usar el IV del servidor
-            byte[] iv = (byte[]) listaDiffie.get(2);
-            IvParameterSpec ivSpec = new IvParameterSpec(iv);   
+            byte[] ivBytes = (byte[]) listaDiffie.get(2);
+            this.iv = new IvParameterSpec(ivBytes);   
 
             // crear llaves simetricas
             this.dh.setLlavesSimetricas();
@@ -171,6 +173,25 @@ public class Cliente extends Thread{
         }
 
     }
+
+    private void enviarUidYHMAC() {
+        try {
+            String uid = String.valueOf(ClienteID); // Generar el UID del cliente actual
+    
+            // Cifrar el UID con K_AB1 usando el IV recibido
+            byte[] uidCifrado = Simetrico.cifrar(dh.llaveSimetricaAB1, uid, this.iv);
+    
+            // Generar el HMAC con K_AB2
+            String hmac = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uid);
+    
+            // Enviar al servidor
+            servidor.recibirUidCifrado(uidCifrado, hmac, dh, this.iv);
+    
+        } catch (Exception e) {
+            System.err.println("Error al enviar UID y HMAC: " + e.getMessage());
+        }
+    }
+    
 
     // fin parte 2
 

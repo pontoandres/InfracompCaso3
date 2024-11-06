@@ -2,12 +2,14 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.Mac;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 
 import javax.crypto.KeyGenerator;
 
@@ -71,6 +73,19 @@ public class Simetrico {
         llaves.add(keyAB2);
 
         return llaves;
+    }
+
+    // Método para generar HMAC
+    public static String generarHMAC(SecretKey llave, String mensaje) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(llave);
+            byte[] hmacBytes = mac.doFinal(mensaje.getBytes());
+            return Base64.getEncoder().encodeToString(hmacBytes);
+        } catch (Exception e) {
+            System.err.println("Error al generar HMAC: " + e.getMessage());
+            return null;
+        }
     }
 
     public void test() throws Exception {

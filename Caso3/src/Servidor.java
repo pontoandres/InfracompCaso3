@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Random;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 
 public class Servidor extends Thread{
@@ -188,6 +189,26 @@ public class Servidor extends Thread{
         BigInteger llaveCompartida = dh.llaveCompartida(dh.llaveCompartidaCliente, llavePrivadaDiffie, dh.prime);
         return llaveCompartida.equals(llaveCompartidaOriginal);
     }
+
+    public synchronized void recibirUidCifrado(byte[] uidCifrado, String hmac, DiffieHellman dh, IvParameterSpec iv) {
+        try {
+            // Obtener el uid descifrado usando K_AB1 y el IV previamente compartido
+            byte[] uidDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, uidCifrado, iv);
+            String uidDescifrado = new String(uidDescifradoBytes);
+
+            // Validar el HMAC recibido usando K_AB2
+            String hmacCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uidDescifrado);
+
+            if (hmacCalculado.equals(hmac)) {
+                System.out.println("UID y HMAC verificados con éxito: " + uidDescifrado);
+            } else {
+                System.err.println("Error en la verificación del HMAC. Datos comprometidos.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al procesar UID cifrado: " + e.getMessage());
+        }
+    }
+
 
 
     // fin parte 2
