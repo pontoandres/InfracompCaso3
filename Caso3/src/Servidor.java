@@ -170,9 +170,15 @@ public class Servidor extends Thread{
         // System.out.println("Texto Diffie: " + textoDiffie);
         byte[] textoCifrado = Asimetrico.cifrar(llavePrivada, "RSA", textoDiffie);
 
+        // Generar un IV de 16 bytes y agregarlo a la lista de retorno
+        byte[] iv = new byte[16];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(iv);
+
         diffieHellmanList.add(diffieHellman); // Agregar el objeto DiffieHellman a la lista
         diffieHellmanList.add(textoCifrado); // Agregar el texto cifrado a la lista
-
+        diffieHellmanList.add(iv); // Agregar el IV a la lista de retorno
+        
         return diffieHellmanList;
     }
     
