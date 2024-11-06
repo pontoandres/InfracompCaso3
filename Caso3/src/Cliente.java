@@ -258,29 +258,27 @@ public class Cliente extends Thread{
     
     
     
-    public static void main(String[] args) {
+    public static void ejecutarOpcion2(Servidor servidor) {
         System.out.println("Cliente");
-        Servidor servidor = new Servidor(4);
+    
         Cliente cliente = new Cliente(servidor, 0, "paquete0");
-        // cliente.conexionServidor();
-
-
+    
         int tot = 32;
         cliente.setTotClientes(tot);
-
-        
-        // descomentar para probar con 32 clientes concurrentes 
+    
+        // Crear 32 clientes concurrentes
         for (int i = 0; i < tot; i++) {
             final int clientId = i + 1;
             final String paqueteId = "paquete" + clientId;
-        
+    
             new Thread(() -> {
                 Cliente clienteConcurrente = new Cliente(servidor, clientId, paqueteId);
-                servidor.registrarCliente(clienteConcurrente);  // Registra el cliente en el servidor
+                servidor.registrarCliente(clienteConcurrente); // Registra el cliente en el servidor
                 clienteConcurrente.conexionServidor();
             }).start();
         }
     }
+    
 
 
 
