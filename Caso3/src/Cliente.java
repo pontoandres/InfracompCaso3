@@ -30,10 +30,11 @@ public class Cliente extends Thread{
     private String tiempoVerificarFirma = "";
     private static int totClientes ;
     private IvParameterSpec iv; // almacenar el IV recibido
+    private String paqueteId;
 
     
 
-    public Cliente(Servidor servidor, int clienteID) { 
+    public Cliente(Servidor servidor, int clienteID, String paqueteId){  
         reto = new BigInteger(130, new java.security.SecureRandom());
         leerLlavePublicaRSA();
         simetrico = new Simetrico();
@@ -42,6 +43,7 @@ public class Cliente extends Thread{
         this.ClienteID = clienteID;
         this.textoBase = "Cliente " + ClienteID + " - ";
         this.llavePrivada = new BigInteger(1024, new java.security.SecureRandom());
+        this.paqueteId = paqueteId;
         
     }
 
@@ -99,7 +101,7 @@ public class Cliente extends Thread{
             pedirLlavesPublicas();
             
             // AGREGAR AQUÍ DEMÁS KONEKSIONES @Ponto
-            enviarUidYHMAC();
+            enviarConsultaPaquete(paqueteId);
 
 
 
@@ -174,23 +176,25 @@ public class Cliente extends Thread{
 
     }
 
-    private void enviarUidYHMAC() {
+    private void enviarConsultaPaquete(String paqueteId) {
         try {
-            String uid = String.valueOf(ClienteID); // Generar el UID del cliente actual
-    
-            // Cifrar el UID con K_AB1 usando el IV recibido
+            // Preparar UID y cifrar
+            String uid = String.valueOf(ClienteID);
             byte[] uidCifrado = Simetrico.cifrar(dh.llaveSimetricaAB1, uid, this.iv);
+            String hmacUid = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uid);
     
-            // Generar el HMAC con K_AB2
-            String hmac = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uid);
+            // Preparar paqueteId y cifrar
+            byte[] paqueteIdCifrado = Simetrico.cifrar(dh.llaveSimetricaAB1, paqueteId, this.iv);
+            String hmacPaqueteId = Simetrico.generarHMAC(dh.llaveSimetricaAB2, paqueteId);
     
-            // Enviar al servidor
-            servidor.recibirUidCifrado(uidCifrado, hmac, dh, this.iv);
+            // Enviar todo al servidor
+            servidor.recibirConsultaPaquete(uidCifrado, hmacUid, paqueteIdCifrado, hmacPaqueteId, dh, this.iv);
     
         } catch (Exception e) {
-            System.err.println("Error al enviar UID y HMAC: " + e.getMessage());
+            System.err.println("Error al enviar consulta de paquete: " + e.getMessage());
         }
     }
+    
     
 
     // fin parte 2
@@ -227,7 +231,7 @@ public class Cliente extends Thread{
     public static void main(String[] args) {
         System.out.println("Cliente");
         Servidor servidor = new Servidor(4);
-        Cliente cliente = new Cliente(servidor, 0);
+        Cliente cliente = new Cliente(servidor, 0, "paquete0");
         // cliente.conexionServidor();
 
 
@@ -238,10 +242,12 @@ public class Cliente extends Thread{
         // descomentar para probar con 32 clientes concurrentes 
         for (int i = 0; i < tot; i++) {
             final int clientId = i + 1;
+            final String paqueteId = "paquete" + clientId;
+
             new Thread(() -> {
-            Cliente clienteConcurrente = new Cliente(servidor, clientId);
+            Cliente clienteConcurrente = new Cliente(servidor, clientId, paqueteId);
             clienteConcurrente.conexionServidor();
-            clienteConcurrente.generarArchivos();
+            //clienteConcurrente.generarArchivos();
             }).start();
         }
     }

@@ -15,6 +15,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -29,12 +30,32 @@ public class Servidor extends Thread{
     int cantidadDelegados;
     int delegadosOcupados = 0;
     BigInteger llavePrivadaDiffie = new BigInteger(1024, new SecureRandom());
-    
+    private HashMap<String, HashMap<String, String>> estadoClientesPaquetes;
 
+    // Lista de estados posibles
+    private static final String[] ESTADOS = {
+        "ENOFICINA", "RECOGIDO", "ENCLASIFICACION", "DESPACHADO",
+        "ENENTREGA", "ENTREGADO", "DESCONOCIDO"
+    };
+    
 
     public Servidor(int cantidadDelegados) {
         leerLlavesRSA();
         this.cantidadDelegados = cantidadDelegados;
+        estadoClientesPaquetes = new HashMap<>();
+        Random random = new Random();
+    
+        // Crear 32 clientes, cada uno con 1 paquete
+        for (int clienteId = 1; clienteId <= 32; clienteId++) {
+            String clienteKey = String.valueOf(clienteId);
+            HashMap<String, String> paquetes = new HashMap<>();
+    
+            String paqueteId = "paquete" + clienteId;
+            String estado = ESTADOS[random.nextInt(ESTADOS.length)];
+            paquetes.put(paqueteId, estado);
+    
+            estadoClientesPaquetes.put(clienteKey, paquetes);
+        }
     }
 
 
@@ -190,24 +211,49 @@ public class Servidor extends Thread{
         return llaveCompartida.equals(llaveCompartidaOriginal);
     }
 
-    public synchronized void recibirUidCifrado(byte[] uidCifrado, String hmac, DiffieHellman dh, IvParameterSpec iv) {
-        try {
-            // Obtener el uid descifrado usando K_AB1 y el IV previamente compartido
-            byte[] uidDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, uidCifrado, iv);
-            String uidDescifrado = new String(uidDescifradoBytes);
+    public synchronized void recibirConsultaPaquete(
+    byte[] uidCifrado,
+    String hmacUid,
+    byte[] paqueteIdCifrado,
+    String hmacPaqueteId,
+    DiffieHellman dh,
+    IvParameterSpec iv
+) {
+    try {
+        // Descifrar UID y verificar HMAC
+        byte[] uidDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, uidCifrado, iv);
+        String uidDescifrado = new String(uidDescifradoBytes);
+        String hmacUidCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uidDescifrado);
 
-            // Validar el HMAC recibido usando K_AB2
-            String hmacCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uidDescifrado);
-
-            if (hmacCalculado.equals(hmac)) {
-                System.out.println("UID y HMAC verificados con éxito: " + uidDescifrado);
-            } else {
-                System.err.println("Error en la verificación del HMAC. Datos comprometidos.");
-            }
-        } catch (Exception e) {
-            System.err.println("Error al procesar UID cifrado: " + e.getMessage());
+        if (!hmacUidCalculado.equals(hmacUid)) {
+            System.err.println("Error en la verificación del HMAC del UID. Datos comprometidos.");
+            return;
         }
+
+        // Descifrar paqueteId y verificar HMAC
+        byte[] paqueteIdDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, paqueteIdCifrado, iv);
+        String paqueteIdDescifrado = new String(paqueteIdDescifradoBytes);
+        String hmacPaqueteIdCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, paqueteIdDescifrado);
+
+        if (!hmacPaqueteIdCalculado.equals(hmacPaqueteId)) {
+            System.err.println("Error en la verificación del HMAC del paquete ID. Datos comprometidos.");
+            return;
+        }
+
+        // Verificar estado del paquete
+        verificarEstadoPaquete(uidDescifrado, paqueteIdDescifrado);
+
+    } catch (Exception e) {
+        System.err.println("Error al procesar consulta de paquete: " + e.getMessage());
     }
+}
+
+    public synchronized void verificarEstadoPaquete(String clienteId, String paqueteId) {
+        HashMap<String, String> paquetesCliente = estadoClientesPaquetes.getOrDefault(clienteId, new HashMap<>());
+        String estado = paquetesCliente.getOrDefault(paqueteId, "DESCONOCIDO");
+        System.out.println("Servidor: Estado del paquete con ID " + paqueteId + " para el cliente " + clienteId + ": " + estado);
+    }    
+    
 
 
 
