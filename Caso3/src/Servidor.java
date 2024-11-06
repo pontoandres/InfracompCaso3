@@ -31,6 +31,8 @@ public class Servidor extends Thread{
     int delegadosOcupados = 0;
     BigInteger llavePrivadaDiffie = new BigInteger(1024, new SecureRandom());
     private HashMap<String, HashMap<String, String>> estadoClientesPaquetes;
+    private HashMap<String, Cliente> clientesConectados = new HashMap<>();
+
 
     // Lista de estados posibles
     private static final String[] ESTADOS = {
@@ -58,7 +60,11 @@ public class Servidor extends Thread{
         }
     }
 
-
+    public synchronized void registrarCliente(Cliente cliente) {
+        String clienteId = String.valueOf(cliente.getClienteID());
+        clientesConectados.put(clienteId, cliente);
+    }
+    
 
     public static void generarLlavesRSA() {
         try {
@@ -212,41 +218,71 @@ public class Servidor extends Thread{
     }
 
     public synchronized void recibirConsultaPaquete(
-    byte[] uidCifrado,
-    String hmacUid,
-    byte[] paqueteIdCifrado,
-    String hmacPaqueteId,
-    DiffieHellman dh,
-    IvParameterSpec iv
-) {
-    try {
-        // Descifrar UID y verificar HMAC
-        byte[] uidDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, uidCifrado, iv);
-        String uidDescifrado = new String(uidDescifradoBytes);
-        String hmacUidCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uidDescifrado);
-
-        if (!hmacUidCalculado.equals(hmacUid)) {
-            System.err.println("Error en la verificación del HMAC del UID. Datos comprometidos.");
-            return;
+        byte[] uidCifrado,
+        String hmacUid,
+        byte[] paqueteIdCifrado,
+        String hmacPaqueteId,
+        DiffieHellman dh,
+        IvParameterSpec iv
+    ) {
+        try {
+            // Descifrar UID y verificar HMAC
+            byte[] uidDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, uidCifrado, iv);
+            String uidDescifrado = new String(uidDescifradoBytes);
+            String hmacUidCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, uidDescifrado);
+    
+            if (!hmacUidCalculado.equals(hmacUid)) {
+                System.err.println("Error en la verificación del HMAC del UID. Datos comprometidos.");
+                return;
+            }
+    
+            // Descifrar paqueteId y verificar HMAC
+            byte[] paqueteIdDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, paqueteIdCifrado, iv);
+            String paqueteIdDescifrado = new String(paqueteIdDescifradoBytes);
+            String hmacPaqueteIdCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, paqueteIdDescifrado);
+    
+            if (!hmacPaqueteIdCalculado.equals(hmacPaqueteId)) {
+                System.err.println("Error en la verificación del HMAC del paquete ID. Datos comprometidos.");
+                return;
+            }
+    
+            // Verificar estado del paquete
+            verificarEstadoPaquete(uidDescifrado, paqueteIdDescifrado);
+    
+            // Obtener el estado del paquete
+            String estado = estadoClientesPaquetes
+                .getOrDefault(uidDescifrado, new HashMap<>())
+                .getOrDefault(paqueteIdDescifrado, "DESCONOCIDO");
+    
+            // Enviar estado y su HMAC al cliente
+            enviarEstadoPaquete(estado, dh, iv, uidDescifrado);
+    
+        } catch (Exception e) {
+            System.err.println("Error al procesar consulta de paquete: " + e.getMessage());
         }
-
-        // Descifrar paqueteId y verificar HMAC
-        byte[] paqueteIdDescifradoBytes = Simetrico.descifrar(dh.llaveSimetricaAB1, paqueteIdCifrado, iv);
-        String paqueteIdDescifrado = new String(paqueteIdDescifradoBytes);
-        String hmacPaqueteIdCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, paqueteIdDescifrado);
-
-        if (!hmacPaqueteIdCalculado.equals(hmacPaqueteId)) {
-            System.err.println("Error en la verificación del HMAC del paquete ID. Datos comprometidos.");
-            return;
-        }
-
-        // Verificar estado del paquete
-        verificarEstadoPaquete(uidDescifrado, paqueteIdDescifrado);
-
-    } catch (Exception e) {
-        System.err.println("Error al procesar consulta de paquete: " + e.getMessage());
     }
-}
+    
+    private void enviarEstadoPaquete(String estado, DiffieHellman dh, IvParameterSpec iv, String clienteId) {
+        try {
+            // Cifrar estado
+            byte[] estadoCifrado = Simetrico.cifrar(dh.llaveSimetricaAB1, estado, iv);
+    
+            // Generar HMAC del estado
+            String hmacEstado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, estado);
+    
+            // Obtener el cliente desde el mapa
+            Cliente cliente = clientesConectados.get(clienteId);
+            if (cliente != null) {
+                System.out.println("Servidor: Enviando estado cifrado al cliente " + clienteId);
+                cliente.recibirEstadoCifrado(estadoCifrado, hmacEstado);
+            } else {
+                System.err.println("Cliente con ID " + clienteId + " no está conectado.");
+            }
+        } catch (Exception e) {
+            System.err.println("Error al enviar estado cifrado: " + e.getMessage());
+        }
+    }    
+    
 
     public synchronized void verificarEstadoPaquete(String clienteId, String paqueteId) {
         HashMap<String, String> paquetesCliente = estadoClientesPaquetes.getOrDefault(clienteId, new HashMap<>());
@@ -254,7 +290,14 @@ public class Servidor extends Thread{
         System.out.println("Servidor: Estado del paquete con ID " + paqueteId + " para el cliente " + clienteId + ": " + estado);
     }    
     
-
+    public synchronized void recibirMensajeTerminacion(String mensaje) {
+        if ("TERMINAR".equals(mensaje)) {
+            System.out.println("Servidor: Conexión terminada correctamente.");
+        } else {
+            System.err.println("Servidor: Mensaje de terminación inválido.");
+        }
+    }
+    
 
 
     // fin parte 2

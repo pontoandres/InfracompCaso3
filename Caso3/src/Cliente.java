@@ -46,6 +46,9 @@ public class Cliente extends Thread{
         this.paqueteId = paqueteId;
         
     }
+    public int getClienteID(){
+        return ClienteID;
+    }
 
     public void setTotClientes(int a){
         totClientes = a;
@@ -195,6 +198,33 @@ public class Cliente extends Thread{
         }
     }
     
+    public void recibirEstadoCifrado(byte[] estadoCifrado, String hmacEstado) {
+        try {
+            // Descifrar el estado
+            String estadoDescifrado = new String(Simetrico.descifrar(dh.llaveSimetricaAB1, estadoCifrado, iv));
+    
+            // Verificar el HMAC
+            String hmacCalculado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, estadoDescifrado);
+    
+            if (hmacEstado.equals(hmacCalculado)) {
+                System.out.println(textoBase + "Estado del paquete: " + estadoDescifrado);
+            } else {
+                System.err.println(textoBase + "Error en la verificación del HMAC del estado.");
+            }
+    
+            // Enviar mensaje de terminación
+            enviarMensajeTerminacion();
+    
+        } catch (Exception e) {
+            System.err.println(textoBase + "Error al procesar estado cifrado: " + e.getMessage());
+        }
+    }
+
+    private void enviarMensajeTerminacion() {
+        servidor.recibirMensajeTerminacion("TERMINAR");
+        System.out.println(textoBase + "Mensaje de terminación enviado.");
+    }
+    
     
 
     // fin parte 2
@@ -243,11 +273,11 @@ public class Cliente extends Thread{
         for (int i = 0; i < tot; i++) {
             final int clientId = i + 1;
             final String paqueteId = "paquete" + clientId;
-
+        
             new Thread(() -> {
-            Cliente clienteConcurrente = new Cliente(servidor, clientId, paqueteId);
-            clienteConcurrente.conexionServidor();
-            //clienteConcurrente.generarArchivos();
+                Cliente clienteConcurrente = new Cliente(servidor, clientId, paqueteId);
+                servidor.registrarCliente(clienteConcurrente);  // Registra el cliente en el servidor
+                clienteConcurrente.conexionServidor();
             }).start();
         }
     }
