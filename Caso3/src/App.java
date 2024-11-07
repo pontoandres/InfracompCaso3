@@ -25,8 +25,10 @@ public class App {
                     opcion1();
                     break;
                 case 2:
+                    System.out.println("Ingrese número de clientes");
+                    int totClientes = scanner.nextInt();
                     System.out.println("Ejecutando clientes concurrentes...");
-                    Cliente.ejecutarOpcion2(servidor);  
+                    Cliente.ejecutarOpcion2(servidor,totClientes);  
                     break;
                 case 0:
                     System.out.println("Saliendo...");

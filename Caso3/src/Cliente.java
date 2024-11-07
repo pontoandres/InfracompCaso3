@@ -8,6 +8,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
@@ -90,6 +91,7 @@ public class Cliente extends Thread{
     }
 
     private void conexionServidor(){
+        servidor.ocuparPuesto();
         long totalSum = 0;
         long startTime = System.currentTimeMillis();
 
@@ -113,6 +115,7 @@ public class Cliente extends Thread{
         }
         
         System.out.println(tiempoDescifrarReto+"\n"+tiempoGenerarGP);
+        servidor.liberarPuesto();
     }
 
     // fin parte 1
@@ -258,13 +261,15 @@ public class Cliente extends Thread{
     
     
     
-    public static void ejecutarOpcion2(Servidor servidor) {
+    public static void ejecutarOpcion2(Servidor servidor, int totClientes){ {
         System.out.println("Cliente");
     
         Cliente cliente = new Cliente(servidor, 0, "paquete0");
-    
-        int tot = 32;
+        
+        int tot = totClientes;
         cliente.setTotClientes(tot);
+    
+        CountDownLatch latch = new CountDownLatch(tot);
     
         // Crear 32 clientes concurrentes
         for (int i = 0; i < tot; i++) {
@@ -273,12 +278,22 @@ public class Cliente extends Thread{
     
             new Thread(() -> {
                 Cliente clienteConcurrente = new Cliente(servidor, clientId, paqueteId);
-                servidor.registrarCliente(clienteConcurrente); // Registra el cliente en el servidor
+                servidor.registrarCliente(clienteConcurrente); 
                 clienteConcurrente.conexionServidor();
+                
+                latch.countDown();
             }).start();
         }
-    }
     
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    
+        System.out.println("Todos los clientes han terminado.");
+    }
+}
 
 
 

@@ -33,6 +33,23 @@ public class Servidor extends Thread{
     private HashMap<String, HashMap<String, String>> estadoClientesPaquetes;
     private HashMap<String, Cliente> clientesConectados = new HashMap<>();
 
+    
+    // ocupar puesto
+    public synchronized void ocuparPuesto() {
+        while (delegadosOcupados == cantidadDelegados) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.err.println("Error al esperar: " + e.getMessage());
+            }
+        }
+        delegadosOcupados++;
+    }
+    // liberar puesto
+    public synchronized void liberarPuesto() {
+        delegadosOcupados--;
+        notifyAll();
+    }
 
     // Lista de estados posibles
     private static final String[] ESTADOS = {
@@ -164,17 +181,17 @@ public class Servidor extends Thread{
     // Parte 1: Lectura reto
 
     public synchronized byte[] descifrarReto(byte[] retoCifrado) {
-        while (delegadosOcupados == cantidadDelegados) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                System.err.println("Error al esperar: " + e.getMessage());
-            }
-        }
-        delegadosOcupados++;
+        // while (delegadosOcupados == cantidadDelegados) {
+        //     try {
+        //         wait();
+        //     } catch (InterruptedException e) {
+        //         System.err.println("Error al esperar: " + e.getMessage());
+        //     }
+        // }
+        // delegadosOcupados++;
         byte[] retoDescifrado = Asimetrico.descifrar(llavePrivada, "RSA", retoCifrado);
-        delegadosOcupados--;
-        notifyAll();
+        // delegadosOcupados--;
+        // notifyAll();
         return retoDescifrado;
     }
 
