@@ -1,6 +1,8 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -287,19 +289,21 @@ public class Servidor extends Thread{
     private void enviarEstadoPaquete(String estado, DiffieHellman dh, IvParameterSpec iv, String clienteId) {
         try {
 
-            // Cifrar estado con cifrado simetrico
-            long totalSum = 0;
-            long startTime = System.currentTimeMillis();
+            // Cifrado simétrico
+            long startTimeSimetrico = System.nanoTime();
             byte[] estadoCifrado = Simetrico.cifrar(dh.llaveSimetricaAB1, estado, iv);
-            totalSum += (System.currentTimeMillis() - startTime);
-            String tiempoVerificaResponde = ("" + totalSum + "\n"); // tiempo verificar
-            System.out.println("Tiempo en verificar y responder: " + tiempoVerificaResponde);
+            long tiempoSimetrico = System.nanoTime() - startTimeSimetrico;
+            System.out.println("Tiempo de cifrado simétrico: " + tiempoSimetrico + " ns");
 
             // Cifrado asimétrico
-            long startTimeAsimetrico = System.currentTimeMillis();
+            long startTimeAsimetrico = System.nanoTime();
             byte[] estadoCifradoAsimetrico = Asimetrico.cifrar(llavePublica, "RSA", estado);
-            long tiempoAsimetrico = System.currentTimeMillis() - startTimeAsimetrico;
-            System.out.println("Tiempo de cifrado asimétrico: " + tiempoAsimetrico + " ms");
+            long tiempoAsimetrico = System.nanoTime() - startTimeAsimetrico;
+            System.out.println("Tiempo de cifrado asimétrico: " + tiempoAsimetrico + " ns");
+
+            // Guardar tiempos en archivo
+            guardarTiemposEnArchivo(clienteId, tiempoSimetrico, tiempoAsimetrico);
+
 
             // Generar HMAC del estado
             String hmacEstado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, estado);
@@ -316,6 +320,19 @@ public class Servidor extends Thread{
             System.err.println("Error al enviar estado cifrado: " + e.getMessage());
         }
     }    
+    
+    private synchronized void guardarTiemposEnArchivo(String clienteId, long tiempoSimetrico, long tiempoAsimetrico) {
+        String nombreArchivo = "tiempos_ejecucion.txt";  // Un archivo único para todos los clientes
+        File archivo = new File(nombreArchivo);
+    
+        try (FileWriter writer = new FileWriter(archivo, true)) {
+            writer.write("Cliente " + clienteId + ": ");
+            writer.write("Simétrico: " + tiempoSimetrico + " ms, ");
+            writer.write("Asimétrico: " + tiempoAsimetrico + " ms\n");
+        } catch (IOException e) {
+            System.err.println("Error al guardar tiempos en el archivo: " + e.getMessage());
+        }
+    }
     
 
     public synchronized void verificarEstadoPaquete(String clienteId, String paqueteId) {
