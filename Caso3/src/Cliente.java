@@ -91,6 +91,7 @@ public class Cliente extends Thread{
     }
 
     private void conexionServidor(){
+
         servidor.ocuparPuesto();
         long totalSum = 0;
         long startTime = System.currentTimeMillis();

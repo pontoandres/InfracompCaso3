@@ -33,7 +33,12 @@ public class Servidor extends Thread{
     private HashMap<String, HashMap<String, String>> estadoClientesPaquetes;
     private HashMap<String, Cliente> clientesConectados = new HashMap<>();
 
-    
+    // modificar cantidad de delegados
+
+    public synchronized void setCantidadDelegados(int cantidadDelegados) {
+        this.cantidadDelegados = cantidadDelegados;
+    }
+
     // ocupar puesto
     public synchronized void ocuparPuesto() {
         while (delegadosOcupados == cantidadDelegados) {

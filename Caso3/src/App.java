@@ -15,8 +15,9 @@ public class App {
         int opcion;
         do {
             System.out.println("Menu:");
-            System.out.println("1. Generar Llaves RSA");
-            System.out.println("2. Ejecutar Clientes Concurrentes");
+            System.out.println("1. Generar Llaves RSA (Opción 1)");
+            System.out.println("2. Ejecutar n Clientes Concurrentes (Opción 2)");
+            System.out.println("3. Cambiar número de delegados");
             System.out.println("0. Salir");
             System.out.print("Seleccione una opción: ");
             opcion = scanner.nextInt();
@@ -29,6 +30,11 @@ public class App {
                     int totClientes = scanner.nextInt();
                     System.out.println("Ejecutando clientes concurrentes...");
                     Cliente.ejecutarOpcion2(servidor,totClientes);  
+                    break;
+                case 3:
+                    System.out.println("Ingrese número de clientes");
+                    int delegados = scanner.nextInt();
+                    servidor.setCantidadDelegados(delegados);
                     break;
                 case 0:
                     System.out.println("Saliendo...");
