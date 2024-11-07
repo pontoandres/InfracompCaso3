@@ -327,8 +327,8 @@ public class Servidor extends Thread{
     
         try (FileWriter writer = new FileWriter(archivo, true)) {
             writer.write("Cliente " + clienteId + ": ");
-            writer.write("Simétrico: " + tiempoSimetrico + " ms, ");
-            writer.write("Asimétrico: " + tiempoAsimetrico + " ms\n");
+            writer.write("Simétrico: " + tiempoSimetrico + " ns, ");
+            writer.write("Asimétrico: " + tiempoAsimetrico + " ns\n");
         } catch (IOException e) {
             System.err.println("Error al guardar tiempos en el archivo: " + e.getMessage());
         }
