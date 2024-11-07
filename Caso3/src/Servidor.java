@@ -286,9 +286,21 @@ public class Servidor extends Thread{
     
     private void enviarEstadoPaquete(String estado, DiffieHellman dh, IvParameterSpec iv, String clienteId) {
         try {
-            // Cifrar estado
+
+            // Cifrar estado con cifrado simetrico
+            long totalSum = 0;
+            long startTime = System.currentTimeMillis();
             byte[] estadoCifrado = Simetrico.cifrar(dh.llaveSimetricaAB1, estado, iv);
-    
+            totalSum += (System.currentTimeMillis() - startTime);
+            String tiempoVerificaResponde = ("" + totalSum + "\n"); // tiempo verificar
+            System.out.println("Tiempo en verificar y responder: " + tiempoVerificaResponde);
+
+            // Cifrado asimétrico
+            long startTimeAsimetrico = System.currentTimeMillis();
+            byte[] estadoCifradoAsimetrico = Asimetrico.cifrar(llavePublica, "RSA", estado);
+            long tiempoAsimetrico = System.currentTimeMillis() - startTimeAsimetrico;
+            System.out.println("Tiempo de cifrado asimétrico: " + tiempoAsimetrico + " ms");
+
             // Generar HMAC del estado
             String hmacEstado = Simetrico.generarHMAC(dh.llaveSimetricaAB2, estado);
     
