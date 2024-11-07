@@ -18,6 +18,7 @@ public class App {
             System.out.println("1. Generar Llaves RSA (Opción 1)");
             System.out.println("2. Ejecutar n Clientes Concurrentes (Opción 2)");
             System.out.println("3. Cambiar número de delegados");
+            System.out.println("4. Probar mismo cliente, 32 consultas");
             System.out.println("0. Salir");
             System.out.print("Seleccione una opción: ");
             opcion = scanner.nextInt();
@@ -35,6 +36,10 @@ public class App {
                     System.out.println("Ingrese número de clientes");
                     int delegados = scanner.nextInt();
                     servidor.setCantidadDelegados(delegados);
+                    break;
+                case 4:
+                    System.out.println("Ejecutando peticiones...");
+                    Cliente.mismoCliente32Consultas();
                     break;
                 case 0:
                     System.out.println("Saliendo...");
