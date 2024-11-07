@@ -29,7 +29,7 @@ public class Servidor extends Thread{
     PublicKey llavePublica = null;
     int cantidadDelegados;
     int delegadosOcupados = 0;
-    BigInteger llavePrivadaDiffie = new BigInteger(1024, new SecureRandom());
+    BigInteger llavePrivadaDiffie = new BigInteger(256, new SecureRandom());
     private HashMap<String, HashMap<String, String>> estadoClientesPaquetes;
     private HashMap<String, Cliente> clientesConectados = new HashMap<>();
 

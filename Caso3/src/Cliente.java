@@ -43,7 +43,7 @@ public class Cliente extends Thread{
         this.servidor = servidor;
         this.ClienteID = clienteID;
         this.textoBase = "Cliente " + ClienteID + " - ";
-        this.llavePrivada = new BigInteger(1024, new java.security.SecureRandom());
+        this.llavePrivada = new BigInteger(256, new java.security.SecureRandom());
         this.paqueteId = paqueteId;
         
     }
