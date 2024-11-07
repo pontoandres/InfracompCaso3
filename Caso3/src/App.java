@@ -57,12 +57,12 @@ public class App {
         App app = new App();
         app.mostrarMenu();
 
-        Servidor servidor = new Servidor(0);
-        for (int i : new int[]{1, 4, 8, 32}) {
-            servidor.setCantidadDelegados(i);
-            for (int j : new int[]{1, 4, 8, 32}) {
-                Cliente.ejecutarOpcion2(servidor, j);
-            }
-        }
+        // Servidor servidor = new Servidor(0);
+        // for (int i : new int[]{1, 4, 8, 32}) {
+        //     servidor.setCantidadDelegados(i);
+        //     for (int j : new int[]{1, 4, 8, 32}) {
+        //         Cliente.ejecutarOpcion2(servidor, j);
+        //     }
+        // }
     }
 }
